@@ -1,18 +1,19 @@
+"""srun -p llm --job-name=train_7b --gres=gpu:8 --ntasks=8 --ntasks-per-node=8 --gpus-per-task=1 --kill-on-bad-exit=1 python train.py --config ./configs/7B_sft.py"""
 JOB_NAME = "7b_train"
 
-SEQ_LEN = 2048
+SEQ_LEN = 32768
 HIDDEN_SIZE = 4096
 NUM_ATTENTION_HEAD = 32
 MLP_RATIO = 8 / 3
 NUM_LAYER = 32
-VOCAB_SIZE = 103168
+VOCAB_SIZE = 32000
 
 # Ckpt folder format:
 # fs: 'local:/mnt/nfs/XXX'
 # oss: 'boto3:s3://model_weights/XXX'
-MODEL_ONLY_FOLDER = "local:llm_ckpts/xxxx"
-SAVE_CKPT_FOLDER = "local:llm_ckpts"
-LOAD_CKPT_FOLDER = "local:llm_ckpts/49"
+MODEL_ONLY_FOLDER = "/mnt/petrelfs/wangbo/.cache/huggingface/hub/models--togethercomputer--LLaMA-2-7B-32K/snapshots/aef6d8946ae1015bdb65c478a2dd73b58daaef47"
+SAVE_CKPT_FOLDER = "/mnt/lustre/wangbo/longdata_ckpt"
+# LOAD_CKPT_FOLDER = "local:llm_ckpts/49"
 ckpt = dict(
     # Path to save training ckpt.
     save_ckpt_folder=SAVE_CKPT_FOLDER,
@@ -22,17 +23,17 @@ ckpt = dict(
     # load_model_only_folder=MODEL_ONLY_FOLDER,
     checkpoint_every=50,
     # Wheter to load optimizer states when continuing training.
-    load_optimizer=True,
+    load_optimizer=False,
 )
 
-TRAIN_FOLDER = "/path/to/dataset"
+TRAIN_FOLDER = "/mnt/petrelfs/share_data/llm_data/0322_llamav4_tokenized/train"
 data = dict(
     seq_len=SEQ_LEN,
     # micro_num means the number of micro_batch contained in one gradient update
     micro_num=4,
     # packed_length = micro_bsz * SEQ_LEN
-    micro_bsz=2,
-    pack_sample_into_one=False,
+    micro_bsz=1,
+    pack_sample_into_one=True,
     total_steps=50000,
     skip_batches="",
     rampup_batch_size="",
@@ -122,7 +123,9 @@ pipeline parallel: pipeline parallel size, only 1 is accepted currently.
 tensor parallel: tensor parallel size, usually the number of GPUs per node, only 1 is accepted currently.
 """
 parallel = dict(
-    zero1=8,
+    zero1=4,
+    tensor=4,
+    pipeline=1,
 )
 
 cudnn_deterministic = False
